@@ -9,13 +9,15 @@ from ..agent.base import AgentContext, AgentResult, AgentType
 from ..agent.data_agent import data_agent
 from ..agent.analysis_agent import analysis_agent
 from ..agent.backtest_agent import backtest_agent
+from ..agent.trading_agent import trading_agent
+from ..agent.risk_agent import risk_agent
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 
 
 class AgentExecuteRequest(BaseModel):
     """Agent 执行请求"""
-    agent_type: str = Field(..., description="Agent 类型: data/analysis/backtest")
+    agent_type: str = Field(..., description="Agent 类型: data/analysis/backtest/trading/risk")
     action: str = Field(..., description="执行动作")
     params: dict = Field(default_factory=dict, description="执行参数")
 
@@ -34,6 +36,8 @@ AGENTS = {
     "data": data_agent,
     "analysis": analysis_agent,
     "backtest": backtest_agent,
+    "trading": trading_agent,
+    "risk": risk_agent,
 }
 
 
@@ -207,4 +211,198 @@ async def backtest_run(
         }
     )
     result = await backtest_agent.run(context)
+    return result.model_dump()
+
+
+# ===== Trading Agent API =====
+
+@router.post("/trading/order")
+async def trading_create_order(
+    symbol: str,
+    side: str,  # buy/sell
+    shares: int,
+    order_type: str = "market",  # market/limit
+    price: Optional[float] = None,
+    market: str = "cn"
+):
+    """
+    创建交易订单
+
+    - **symbol**: 股票代码
+    - **side**: 买卖方向 buy/sell
+    - **shares**: 股数
+    - **order_type**: 订单类型 market/limit
+    - **price**: 限价单价格
+    - **market**: 市场
+    """
+    task_id = str(uuid.uuid4())
+    context = AgentContext(
+        task_id=task_id,
+        params={
+            "action": "create_order",
+            "symbol": symbol,
+            "side": side,
+            "shares": shares,
+            "order_type": order_type,
+            "price": price,
+            "market": market
+        }
+    )
+    result = await trading_agent.run(context)
+    return result.model_dump()
+
+
+@router.get("/trading/orders")
+async def trading_get_orders(
+    status: Optional[str] = None,
+    symbol: Optional[str] = None
+):
+    """
+    获取订单列表
+
+    - **status**: 订单状态筛选
+    - **symbol**: 股票代码筛选
+    """
+    task_id = str(uuid.uuid4())
+    context = AgentContext(
+        task_id=task_id,
+        params={
+            "action": "get_orders",
+            "status": status,
+            "symbol": symbol
+        }
+    )
+    result = await trading_agent.run(context)
+    return result.model_dump()
+
+
+@router.get("/trading/positions")
+async def trading_get_positions():
+    """获取当前持仓"""
+    task_id = str(uuid.uuid4())
+    context = AgentContext(
+        task_id=task_id,
+        params={"action": "get_positions"}
+    )
+    result = await trading_agent.run(context)
+    return result.model_dump()
+
+
+@router.get("/trading/account")
+async def trading_get_account():
+    """获取账户信息"""
+    task_id = str(uuid.uuid4())
+    context = AgentContext(
+        task_id=task_id,
+        params={"action": "get_account"}
+    )
+    result = await trading_agent.run(context)
+    return result.model_dump()
+
+
+@router.get("/trading/history")
+async def trading_get_history(limit: int = 50):
+    """
+    获取交易历史
+
+    - **limit**: 返回条数
+    """
+    task_id = str(uuid.uuid4())
+    context = AgentContext(
+        task_id=task_id,
+        params={"action": "get_trade_history", "limit": limit}
+    )
+    result = await trading_agent.run(context)
+    return result.model_dump()
+
+
+# ===== Risk Agent API =====
+
+@router.post("/risk/assess")
+async def risk_assess():
+    """综合风险评估"""
+    task_id = str(uuid.uuid4())
+    context = AgentContext(
+        task_id=task_id,
+        params={"action": "assess"}
+    )
+    result = await risk_agent.run(context)
+    return result.model_dump()
+
+
+@router.post("/risk/check")
+async def risk_check_position(
+    symbol: str,
+    shares: int,
+    price: float,
+    trade_action: str = "buy"
+):
+    """
+    检查仓位风险
+
+    - **symbol**: 股票代码
+    - **shares**: 交易股数
+    - **price**: 交易价格
+    - **trade_action**: 交易类型 buy/sell
+    """
+    task_id = str(uuid.uuid4())
+    context = AgentContext(
+        task_id=task_id,
+        params={
+            "action": "position_check",
+            "symbol": symbol,
+            "shares": shares,
+            "price": price,
+            "trade_action": trade_action
+        }
+    )
+    result = await risk_agent.run(context)
+    return result.model_dump()
+
+
+@router.get("/risk/config")
+async def risk_get_config():
+    """获取风控配置"""
+    task_id = str(uuid.uuid4())
+    context = AgentContext(
+        task_id=task_id,
+        params={"action": "get_config"}
+    )
+    result = await risk_agent.run(context)
+    return result.model_dump()
+
+
+@router.post("/risk/stop-loss")
+async def risk_set_stop_loss(
+    symbol: str,
+    stop_loss_percent: float
+):
+    """
+    设置止损
+
+    - **symbol**: 股票代码
+    - **stop_loss_percent**: 止损比例
+    """
+    task_id = str(uuid.uuid4())
+    context = AgentContext(
+        task_id=task_id,
+        params={
+            "action": "set_stop_loss",
+            "symbol": symbol,
+            "stop_loss_percent": stop_loss_percent
+        }
+    )
+    result = await risk_agent.run(context)
+    return result.model_dump()
+
+
+@router.get("/risk/portfolio")
+async def risk_portfolio_analysis():
+    """投资组合风险分析"""
+    task_id = str(uuid.uuid4())
+    context = AgentContext(
+        task_id=task_id,
+        params={"action": "portfolio_analysis"}
+    )
+    result = await risk_agent.run(context)
     return result.model_dump()
