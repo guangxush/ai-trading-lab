@@ -5,9 +5,10 @@
 ## ✨ 特性
 
 - 📊 **多市场支持**：A股、美股、港股、加密货币、期货期权
-- 🧩 **SKILL 插件系统**：可扩展的策略插件框架
-- 🤖 **AI 分析能力**：智能行情分析和交易建议
+- 🧩 **SKILL 插件系统**：可扩展的策略插件框架，支持上传下载
+- 🤖 **AI Agent 体系**：6 大智能 Agent 协同工作
 - 📈 **策略回测**：历史数据回测和收益分析
+- 💰 **模拟交易**：虚拟资金交易，风险可控
 - 🔌 **本地部署**：Docker 一键启动，数据完全私有
 
 ## 🏗️ 架构
@@ -23,6 +24,16 @@
 │   Market Data Gateway   │   Cache Layer   │ DB         │
 └──────────────────────────────────────────────────────┘
 ```
+
+## 🤖 AI Agents
+
+| Agent | 功能 |
+|-------|------|
+| **Data Agent** | 数据采集、监控列表、历史数据同步 |
+| **Analysis Agent** | 技术指标（MA/RSI/MACD/布林带）、趋势分析、买卖信号 |
+| **Backtest Agent** | 策略回测、参数优化、风险指标计算 |
+| **Trading Agent** | 订单管理、交易执行、持仓管理 |
+| **Risk Agent** | 风险评估、仓位控制、止损止盈 |
 
 ## 🚀 快速开始
 
@@ -78,24 +89,18 @@ npm run dev
 ```
 ai-trading-lab/
 ├── backend/                # 后端服务 (FastAPI)
-│   ├── app/
-│   │   ├── api/           # API 路由
-│   │   ├── core/          # 核心模块（数据库、缓存）
-│   │   ├── data/          # 数据层（数据源、网关）
-│   │   ├── skill/         # SKILL 框架
-│   │   └── main.py        # 入口文件
-│   └── requirements.txt
+│   └── app/
+│       ├── api/           # API 路由
+│       ├── agent/         # AI Agents
+│       ├── skill/         # SKILL 框架
+│       └── data/          # 数据层
 ├── frontend/               # 前端服务 (React + TypeScript)
-│   ├── src/
-│   │   ├── pages/         # 页面组件
-│   │   ├── components/    # 通用组件
-│   │   └── api/           # API 封装
-│   └── package.json
+│   └── src/
+│       ├── pages/         # 页面组件
+│       └── api/           # API 封装
 ├── skills/                 # SKILL 插件库
 │   └── examples/          # 示例 SKILL
-├── docs/                   # 文档
-│   └── plans/             # 设计文档
-└── docker-compose.yml      # Docker 编排
+└── docker-compose.yml
 ```
 
 ## 🧩 SKILL 开发
@@ -103,7 +108,6 @@ ai-trading-lab/
 创建一个自定义 SKILL 非常简单：
 
 ```python
-# skills/my_strategy/__init__.py
 from app.skill.base import BaseSkill, SkillContext, SkillResult, SkillStatus
 
 class MyStrategy(BaseSkill):
@@ -115,31 +119,29 @@ class MyStrategy(BaseSkill):
     def version(self) -> str:
         return "1.0.0"
 
-    @property
-    def description(self) -> str:
-        return "我的自定义策略"
-
     async def execute(self, context: SkillContext) -> SkillResult:
         # 你的策略逻辑
         return SkillResult(
             status=SkillStatus.SUCCESS,
-            data={"result": "ok"}
+            data={"signal": "buy"}
         )
 ```
 
 ## 📖 API 文档
 
-启动服务后访问 http://localhost:8000/docs 查看完整的 API 文档。
+启动服务后访问 http://localhost:8000/docs 查看完整 API 文档。
 
 ### 主要接口
 
-| 接口 | 方法 | 说明 |
+| 模块 | 接口 | 说明 |
 |------|------|------|
-| `/api/market/search` | GET | 搜索股票 |
-| `/api/market/quote/{symbol}` | GET | 获取实时行情 |
-| `/api/market/history/{symbol}` | GET | 获取历史K线 |
-| `/api/skill/list` | GET | 列出所有 SKILL |
-| `/api/skill/execute` | POST | 执行 SKILL |
+| 行情 | `GET /api/market/search` | 搜索股票 |
+| 行情 | `GET /api/market/quote/{symbol}` | 获取实时行情 |
+| 分析 | `POST /api/agent/analysis/signal` | 买卖信号分析 |
+| 回测 | `POST /api/agent/backtest/run` | 运行策略回测 |
+| 交易 | `POST /api/agent/trading/order` | 创建交易订单 |
+| 风险 | `POST /api/agent/risk/assess` | 综合风险评估 |
+| 市场 | `GET /api/skill/marketplace/list` | SKILL 市场列表 |
 
 ## 🛠️ 技术栈
 
@@ -155,29 +157,15 @@ class MyStrategy(BaseSkill):
 - Ant Design
 - ECharts
 
-## 📄 文档
-
-- [设计文档](docs/plans/2026-03-22-ai-trading-platform-design.md)
-- [Phase 1 实施计划](docs/plans/2026-03-22-implementation-plan-phase1.md)
-
 ## 📝 开发路线
 
-- [x] Phase 1: 核心框架（当前）
-  - [x] 数据层基础
-  - [x] SKILL 框架
-  - [x] Web UI 骨架
-  - [x] Docker 部署
-- [ ] Phase 2: AI 能力
-  - [ ] Data Agent
-  - [ ] Analysis Agent
-  - [ ] Backtest Agent
-- [ ] Phase 3: 交易能力
-  - [ ] Trading Agent
-  - [ ] Risk Agent
-  - [ ] 模拟交易
-- [ ] Phase 4: 生态建设
-  - [ ] SKILL Marketplace
-  - [ ] 社区运营
+- [x] Phase 1: 核心框架
+- [x] Phase 2: AI 能力
+- [x] Phase 3: 交易能力
+- [x] Phase 4: 生态建设
+  - [x] SKILL Marketplace
+  - [x] 示例 SKILL
+  - [x] 完善文档
 
 ## 🤝 贡献
 
