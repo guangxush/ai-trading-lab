@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # 后端 API 服务
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-trading-api
+    ports:
+      - "8000:8000"
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DEBUG=true
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=sqlite+aiosqlite:///app/data/trading.db
+    depends_on:
+      - redis
+    volumes:
+      - ./backend/app:/app/app:ro
+      - ./skills:/app/skills:ro
+      - trading_data:/app/data
+    networks:
+      - trading-network
+
+  # 前端 Web 服务
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai-trading-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - trading-network
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: ai-trading-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - trading-network
+
+networks:
+  trading-network:
+    driver: bridge
+
+volumes:
+  trading_data:
+  redis_data:
