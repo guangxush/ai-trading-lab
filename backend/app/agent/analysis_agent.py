@@ -82,7 +82,7 @@ class AnalysisAgent(BaseAgent):
 
         closes = [h.close for h in history]
         highs = [h.high for h in history]
-        lows = [h.low for h. in history]
+        lows = [h.low for h in history]
         volumes = [h.volume for h in history]
 
         # 计算技术指标
